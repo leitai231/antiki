@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-不想背单词 (BuXiangBeiDanCi) — a macOS-native vocabulary capture app. Users select text in any app, copy it, press a global hotkey (Cmd+Shift+D), then pick words from a floating panel. Captured words are stored with their sentence context and source info, queued for AI processing (OpenAI GPT-4o-mini for phonetics/definitions/translations).
+不想背单词 (BuXiangBeiDanCi) — a macOS-native vocabulary capture app. Users select text in any app, copy it, press a global hotkey (Cmd+Ctrl+Z), then pick words from a floating panel. Captured words are stored with their sentence context and source info, queued for AI processing (OpenAI GPT-4o-mini for phonetics/definitions/translations).
 
 **Status**: Phase 1 MVP, in active development. AI processing is stubbed out (see `CaptureCoordinator.processJob`).
 
@@ -37,7 +37,7 @@ No tests exist yet. No linter configured.
 
 ### Capture Flow (the core pipeline)
 
-1. **HotkeyHandler** (singleton) — registers global Cmd+Shift+D, reads clipboard, detects source app, shows picker panel
+1. **HotkeyHandler** (singleton) — registers global Cmd+Ctrl+Z, reads clipboard, detects source app, shows picker panel
 2. **WordPickerPanel** — floating NSPanel with tokenized sentence; user clicks words to select
 3. **Tokenizer** — uses `NLTokenizer` to split sentence into clickable word tokens; `NLTagger` for lemmatization
 4. **SourceDetector** — identifies frontmost app; extracts browser URL/title via AppleScript for Safari/Chrome/Edge/Arc/Firefox
@@ -62,6 +62,6 @@ The `AppDelegate` manages the floating `NSPanel` lifecycle by observing `HotkeyH
 
 - **No app sandbox**: The entitlements file explicitly disables sandboxing. This is intentional — AppleScript automation requires it.
 - **DB location**: `~/Library/Application Support/BuXiangBeiDanCi/buxiangbeidanci.sqlite`
-- **Clipboard-based capture**: The app reads from `NSPasteboard.general`, not from selection directly. User must Cmd+C before Cmd+Shift+D.
+- **Clipboard-based capture**: The app reads from `NSPasteboard.general`, not from selection directly. User must Cmd+C before Cmd+Ctrl+Z.
 - **FlowLayout**: Custom SwiftUI `Layout` in `WordPickerPanel.swift` for word-wrap token display.
 - **UI language**: Chinese (Simplified) for all user-facing strings.
