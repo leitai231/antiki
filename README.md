@@ -1,4 +1,4 @@
-# Antiki (BuXiangBeiDanCi)
+# Antiki — 不想背单词
 
 > A macOS-native vocabulary capture app — collect words naturally while reading.
 
