@@ -1,0 +1,70 @@
+name: BuXiangBeiDanCi
+options:
+  bundleIdPrefix: com.blackkingbar
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: "6.24.0"
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
+
+targets:
+  BuXiangBeiDanCi:
+    type: application
+    platform: macOS
+    sources:
+      - BuXiangBeiDanCi
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.blackkingbar.buxiangbeidanci
+        PRODUCT_NAME: 不想背单词
+        PRODUCT_MODULE_NAME: BuXiangBeiDanCi
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_FILE: BuXiangBeiDanCi/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BuXiangBeiDanCi/Resources/BuXiangBeiDanCi.entitlements
+        SWIFT_VERSION: "5.9"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+    dependencies:
+      - package: GRDB
+      - package: KeyboardShortcuts
+    entitlements:
+      path: BuXiangBeiDanCi/Resources/BuXiangBeiDanCi.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.automation.apple-events: true
+
+  BuXiangBeiDanCiTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - BuXiangBeiDanCiTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/不想背单词.app/Contents/MacOS/不想背单词"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: BuXiangBeiDanCi
+      - package: GRDB
+
+schemes:
+  BuXiangBeiDanCi:
+    build:
+      targets:
+        BuXiangBeiDanCi: all
+        BuXiangBeiDanCiTests: [test]
+    test:
+      targets:
+        - BuXiangBeiDanCiTests

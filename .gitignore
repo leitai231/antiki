@@ -1,0 +1,57 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+*.xcworkspace
+!default.xcworkspace
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods (if used)
+Pods/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Secrets
+*.env
+.env.*
+Secrets.swift
+
+# SQLite
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+*.tmp
+
+# Gas Town / Claude runtime
+.beads/
+.claude/
+.runtime/
+.logs/
+__pycache__/
+state.json
