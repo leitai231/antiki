@@ -234,6 +234,25 @@ class CaptureCoordinator: ObservableObject {
         let placeholder = try? await db.getWord(lemma: job.normalizedText)
         let inheritedFolderId = placeholder?.folderId
 
+        // When AI returns a different lemma (e.g. "running" → "run"), rename the
+        // placeholder in-place so its word ID is preserved. This keeps any active
+        // UI selection valid after the refresh.
+        let aiLemma = result.response.lemma
+            .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let jobLemma = job.normalizedText
+            .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if var placeholder, placeholder.isProcessing,
+           aiLemma != jobLemma {
+            let targetExists = (try? await db.getWord(lemma: aiLemma)) != nil
+            if !targetExists {
+                placeholder.lemma = aiLemma
+                try? await db.updateWord(placeholder)
+            } else if let placeholderId = placeholder.id {
+                try? await db.deleteWord(id: placeholderId)
+            }
+        }
+
         let word = try await upsertWord(
             lemma: result.response.lemma,
             phonetic: normalizedOptional(result.response.phonetic),
@@ -688,7 +707,7 @@ protocol AIProcessing: Sendable {
 enum AIProcessingError: Error, LocalizedError {
     case missingAPIKey
     case network(underlying: Error)
-    case rateLimited(retryAfter: TimeInterval?)
+    case rateLimited(retryAfter: TimeInterval?, apiMessage: String? = nil)
     case requestFailed(statusCode: Int, message: String)
     case invalidResponse(raw: String)
     case schemaValidationFailed(field: String, reason: String)
@@ -717,9 +736,15 @@ enum AIProcessingError: Error, LocalizedError {
             return "未配置 OpenAI API Key，请在设置中填写。"
         case let .network(underlying):
             return "网络请求失败：\(underlying.localizedDescription)"
-        case let .rateLimited(retryAfter):
+        case let .rateLimited(retryAfter, apiMessage):
+            if let apiMessage, apiMessage.lowercased().contains("quota") {
+                return "OpenAI 账户额度已用完，请充值后重试。(\(apiMessage))"
+            }
             if let retryAfter {
                 return "请求过于频繁，请在 \(Int(retryAfter)) 秒后重试。"
+            }
+            if let apiMessage {
+                return "请求被限制：\(apiMessage)"
             }
             return "请求过于频繁，请稍后重试。"
         case let .requestFailed(statusCode, message):
@@ -806,7 +831,9 @@ actor AIProcessor: AIProcessing {
 
         if httpResponse.statusCode == 429 {
             let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init)
-            throw AIProcessingError.rateLimited(retryAfter: retryAfter)
+            let body = decodeErrorMessage(from: data)
+            logger.error("⚠️ 429 response body: \(body ?? "<empty>", privacy: .public)")
+            throw AIProcessingError.rateLimited(retryAfter: retryAfter, apiMessage: body)
         }
 
         guard (200..<300).contains(httpResponse.statusCode) else {

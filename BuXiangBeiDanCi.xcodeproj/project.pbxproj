@@ -66,7 +66,7 @@
 		C289DD30D19C3FAC1B9B1555 /* CaptureCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureCoordinator.swift; sourceTree = "<group>"; };
 		C65F197FCDD7FA9B3FA7959C /* TokenizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenizerTests.swift; sourceTree = "<group>"; };
 		CF25350316E37C3F128D9D10 /* Tokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokenizer.swift; sourceTree = "<group>"; };
-		DA16FED6923F0FD29A129C8D /* BuXiangBeiDanCi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BuXiangBeiDanCi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA16FED6923F0FD29A129C8D /* 不想背单词.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "不想背单词.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD9CCF1E9E3044A70D0BDEB6 /* TestDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDatabase.swift; sourceTree = "<group>"; };
 		DF5954EE1FA598358FC96FD0 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
 		E75B1B934A0029F547D0B935 /* SelectionCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCaptureService.swift; sourceTree = "<group>"; };
@@ -97,7 +97,7 @@
 		191476580B7F2A6D9DCB0D96 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DA16FED6923F0FD29A129C8D /* BuXiangBeiDanCi.app */,
+				DA16FED6923F0FD29A129C8D /* 不想背单词.app */,
 				95685E0AB4C6442402A59BBA /* BuXiangBeiDanCiTests.xctest */,
 			);
 			name = Products;
@@ -254,7 +254,7 @@
 				B2A77C1A4722AF0FC0C15991 /* KeyboardShortcuts */,
 			);
 			productName = BuXiangBeiDanCi;
-			productReference = DA16FED6923F0FD29A129C8D /* BuXiangBeiDanCi.app */;
+			productReference = DA16FED6923F0FD29A129C8D /* 不想背单词.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -267,7 +267,6 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					89A897F874DD4CE19838E90A = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -282,7 +281,7 @@
 			mainGroup = E071E1C835A49706B4C2D5C6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+				FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB" */,
 				C50B02C94D83227FC122038D /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -490,7 +489,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 6HYG7Y3FCX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = BuXiangBeiDanCi/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -515,7 +514,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 6HYG7Y3FCX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = BuXiangBeiDanCi/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -592,7 +591,7 @@
 				minimumVersion = 2.0.0;
 			};
 		};
-		FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+		FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -610,12 +609,12 @@
 		};
 		E1B0D4B155612B6F0EE09196 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			package = FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
 		};
 		EA8239A9CE92396B0B067BE8 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			package = FF3E7D411B507C40B6DF41B3 /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -69,6 +69,7 @@ struct ReviewDetailView: View {
                     }
                     .padding()
                 }
+                .scrollIndicators(.hidden)
 
                 Divider()
 

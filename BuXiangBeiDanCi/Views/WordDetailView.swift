@@ -9,6 +9,10 @@ struct WordDetailView: View {
     @State private var sources: [WordSource] = []
     @State private var sourceJobs: [Int64: CaptureJob] = [:]
     @State private var showDeleteConfirmation = false
+    @State private var failedJob: CaptureJob?
+    @State private var isRetrying = false
+    @State private var isEditingDefinition = false
+    @State private var editedDefinition = ""
 
     init(word: Word, coordinator: CaptureCoordinator) {
         self.initialWord = word
@@ -41,9 +45,23 @@ struct WordDetailView: View {
 
                 // Definition
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("释义")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+                    HStack {
+                        Text("释义")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        if !word.isProcessing && !word.isFailed && !isEditingDefinition {
+                            Button {
+                                editedDefinition = word.definition
+                                isEditingDefinition = true
+                            } label: {
+                                Image(systemName: "pencil.line")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.borderless)
+                            .help("编辑释义")
+                        }
+                    }
                     if word.isProcessing {
                         HStack(spacing: 8) {
                             ProgressView()
@@ -53,8 +71,33 @@ struct WordDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                     } else if word.isFailed {
-                        DefinitionText(definition: word.definition, font: .body)
-                            .foregroundStyle(.orange)
+                        HStack(spacing: 12) {
+                            DefinitionText(definition: word.definition, font: .body)
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            if sources.isEmpty, failedJob != nil {
+                                Button {
+                                    Task { await retryFailedWord() }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        if isRetrying {
+                                            ProgressView()
+                                                .scaleEffect(0.6)
+                                        }
+                                        Text(isRetrying ? "处理中…" : "重新获取")
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(isRetrying)
+                            }
+                        }
+                    } else if isEditingDefinition {
+                        EditableDefinitionEditor(
+                            text: $editedDefinition,
+                            onCommit: { saveDefinition() },
+                            onCancel: { isEditingDefinition = false }
+                        )
                     } else {
                         DefinitionText(definition: word.definition, font: .body)
                     }
@@ -93,6 +136,7 @@ struct WordDetailView: View {
             }
             .padding()
         }
+        .scrollIndicators(.hidden)
         .textSelection(.enabled)
         .navigationTitle(word.lemma)
         .task {
@@ -130,9 +174,39 @@ struct WordDetailView: View {
                     sourceJobs[jobId] = job
                 }
             }
+            // Load failed job for retry button when no sources exist
+            if word.isFailed, sources.isEmpty {
+                failedJob = try? await Database.shared.getLatestFailedJob(forLemma: word.lemma)
+            } else {
+                failedJob = nil
+            }
         } catch {
             // silently fail — UI already shows empty state
         }
+    }
+
+    private func saveDefinition() {
+        let trimmed = editedDefinition.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != word.definition else {
+            isEditingDefinition = false
+            return
+        }
+        isEditingDefinition = false
+        var updated = word
+        updated.definition = trimmed
+        updated.updatedAt = Date()
+        Task {
+            try? await Database.shared.updateWord(updated)
+            word = updated
+            coordinator.wordChangeCounter += 1
+        }
+    }
+
+    private func retryFailedWord() async {
+        guard let job = failedJob else { return }
+        isRetrying = true
+        await coordinator.retryJob(job)
+        isRetrying = false
     }
 }
 
@@ -143,6 +217,8 @@ struct SourceCard: View {
     let captureJob: CaptureJob?
     @ObservedObject var coordinator: CaptureCoordinator
     @State private var isRetrying = false
+    @State private var isEditingTranslation = false
+    @State private var editedTranslation = ""
 
     /// Whether this source has error content (failed job or error text in sentence)
     private var hasError: Bool {
@@ -208,10 +284,28 @@ struct SourceCard: View {
                     .font(.body)
 
                 // Translation with highlighted word
-                if let translation = source.sentenceTranslation {
-                    Text(highlightedTranslation(translation))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+                if isEditingTranslation {
+                    EditableTranslationEditor(
+                        text: $editedTranslation,
+                        onCommit: { saveTranslation() },
+                        onCancel: { isEditingTranslation = false }
+                    )
+                } else if let translation = source.sentenceTranslation {
+                    HStack(alignment: .top, spacing: 6) {
+                        Text(highlightedTranslation(translation))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            editedTranslation = translationWithMarkers(translation)
+                            isEditingTranslation = true
+                        } label: {
+                            Image(systemName: "pencil.line")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .help("编辑翻译，用 *词语* 标记高亮词")
+                    }
                 }
 
                 if source.needsReview {
@@ -257,6 +351,56 @@ struct SourceCard: View {
         .padding()
         .background(Color(.controlBackgroundColor))
         .cornerRadius(8)
+    }
+
+    private func saveTranslation() {
+        let raw = editedTranslation.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else {
+            isEditingTranslation = false
+            return
+        }
+        isEditingTranslation = false
+
+        // Parse [highlighted word] from the edited text
+        let (plainText, highlightedWord) = parseMarkedWord(raw)
+
+        var updated = source
+        updated.sentenceTranslation = plainText
+        if let word = highlightedWord {
+            updated.wordInTranslation = word
+        }
+        Task {
+            try? await Database.shared.updateWordSource(updated)
+            coordinator.wordChangeCounter += 1
+        }
+    }
+
+    /// Wrap the existing wordInTranslation in *asterisks* for editing
+    private func translationWithMarkers(_ translation: String) -> String {
+        guard let word = source.wordInTranslation,
+              let range = translation.range(of: word) else {
+            return translation
+        }
+        return translation.replacingCharacters(in: range, with: "*\(word)*")
+    }
+
+    /// Parse `*word*` from text, returning (plain text without markers, extracted word)
+    private func parseMarkedWord(_ text: String) -> (String, String?) {
+        guard let openMark = text.firstIndex(of: "*") else {
+            return (text, nil)
+        }
+        let afterOpen = text.index(after: openMark)
+        guard afterOpen < text.endIndex,
+              let closeMark = text[afterOpen...].firstIndex(of: "*"),
+              afterOpen < closeMark else {
+            return (text, nil)
+        }
+        let word = String(text[afterOpen..<closeMark])
+        let plain = text.replacingCharacters(
+            in: openMark...closeMark,
+            with: word
+        )
+        return (plain, word.isEmpty ? nil : word)
     }
 
     private func retryProcessing() async {
@@ -373,6 +517,7 @@ struct WordListView: View {
                         }
                 }
             }
+            .scrollIndicators(.hidden)
             .navigationTitle(navigationTitle)
             .onDeleteCommand {
                 handleDelete()
@@ -477,6 +622,79 @@ private struct DefinitionText: View {
                     Text(item)
                         .font(font)
                 }
+            }
+        }
+    }
+}
+
+// MARK: - Inline Editors
+
+/// Multi-line editor for word definition with save/cancel buttons
+private struct EditableDefinitionEditor: View {
+    @Binding var text: String
+    var onCommit: () -> Void
+    var onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextEditor(text: $text)
+                .font(.body)
+                .scrollContentBackground(.hidden)
+                .padding(8)
+                .background(Color(.controlBackgroundColor))
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
+                )
+                .frame(minHeight: 60, maxHeight: 200)
+            HStack(spacing: 8) {
+                Spacer()
+                Button("取消") { onCancel() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .keyboardShortcut(.escape, modifiers: [])
+                Button("保存") { onCommit() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .keyboardShortcut(.return, modifiers: .command)
+            }
+        }
+    }
+}
+
+/// Single-line editor for sentence translation with save/cancel buttons
+private struct EditableTranslationEditor: View {
+    @Binding var text: String
+    var onCommit: () -> Void
+    var onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("句子翻译", text: $text)
+                .font(.callout)
+                .textFieldStyle(.plain)
+                .padding(6)
+                .background(Color(.controlBackgroundColor))
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
+                )
+                .onSubmit { onCommit() }
+            HStack(spacing: 8) {
+                Text("用 *星号* 标记高亮词")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+                Button("取消") { onCancel() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .keyboardShortcut(.escape, modifiers: [])
+                Button("保存") { onCommit() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .keyboardShortcut(.return, modifiers: .command)
             }
         }
     }

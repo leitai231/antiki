@@ -176,6 +176,7 @@ struct Sidebar: View {
                 .tag(SidebarItem.dueForReview)
         }
         .listStyle(.sidebar)
+        .scrollIndicators(.hidden)
         .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
         .safeAreaInset(edge: .bottom) {
             Button {
@@ -352,6 +353,7 @@ struct CaptureListView: View {
             List(filteredCaptures) { job in
                 CaptureJobRow(job: job, coordinator: coordinator)
             }
+            .scrollIndicators(.hidden)
             .navigationTitle(navTitle)
             .navigationDestination(for: Word.self) { word in
                 WordDetailView(word: word, coordinator: coordinator)

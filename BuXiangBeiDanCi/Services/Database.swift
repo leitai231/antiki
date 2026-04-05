@@ -431,6 +431,16 @@ final class Database {
         }
     }
     
+    func getLatestFailedJob(forLemma lemma: String) async throws -> CaptureJob? {
+        try await dbWriter.read { db in
+            try CaptureJob
+                .filter(CaptureJob.Columns.normalizedText == lemma)
+                .filter(CaptureJob.Columns.status == CaptureJob.JobStatus.failed.rawValue)
+                .order(CaptureJob.Columns.createdAt.desc)
+                .fetchOne(db)
+        }
+    }
+
     func getWordForCaptureJob(jobId: Int64) async throws -> Word? {
         try await dbWriter.read { db in
             let source = try WordSource

@@ -33,7 +33,7 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: ""
+        DEVELOPMENT_TEAM: 5NJ9Z586TK
     dependencies:
       - package: GRDB
       - package: KeyboardShortcuts

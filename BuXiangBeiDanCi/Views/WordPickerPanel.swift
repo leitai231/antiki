@@ -41,6 +41,7 @@ struct WordPickerPanel: View {
                 }
                 .padding(.vertical, 8)
             }
+            .scrollIndicators(.hidden)
             .frame(maxHeight: 350)
             
             Divider()
