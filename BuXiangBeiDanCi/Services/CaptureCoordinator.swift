@@ -463,6 +463,30 @@ class CaptureCoordinator: ObservableObject {
         }
     }
 
+    // MARK: - Delete Source
+
+    func deleteSource(_ source: WordSource) async {
+        guard let sourceId = source.id else { return }
+        do {
+            try await db.deleteWordSource(id: sourceId)
+
+            // Clear needsReview on the associated capture job so it doesn't
+            // linger as a zombie entry in the review queue.
+            if let jobId = source.captureJobId {
+                if var job = try? await db.getCaptureJob(id: jobId), job.needsReview {
+                    job.needsReview = false
+                    try? await db.updateCaptureJob(job)
+                }
+            }
+
+            await loadRecentCaptures()
+            wordChangeCounter += 1
+        } catch {
+            logger.error("❌ Failed to delete source: \(error)")
+            showToast("删除失败")
+        }
+    }
+
     /// Get word associated with a capture job (for navigation)
     func wordForJob(_ job: CaptureJob) async -> Word? {
         guard let jobId = job.id, job.status == .completed else { return nil }

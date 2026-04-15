@@ -364,10 +364,8 @@ struct SourceCard: View {
         .cornerRadius(8)
         .confirmationDialog("确认删除此场景？", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button("删除", role: .destructive) {
-                guard let sourceId = source.id else { return }
                 Task {
-                    try? await Database.shared.deleteWordSource(id: sourceId)
-                    coordinator.wordChangeCounter += 1
+                    await coordinator.deleteSource(source)
                 }
             }
         }
