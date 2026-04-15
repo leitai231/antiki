@@ -417,7 +417,7 @@ final class Database {
     
     func getAllWords() async throws -> [Word] {
         try await dbWriter.read { db in
-            try Word.order(Column("createdAt").desc).fetchAll(db)
+            try Word.order(Column("updatedAt").desc).fetchAll(db)
         }
     }
     

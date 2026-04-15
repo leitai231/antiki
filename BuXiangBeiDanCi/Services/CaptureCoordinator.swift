@@ -201,13 +201,14 @@ class CaptureCoordinator: ObservableObject {
     }
 
     /// Insert a placeholder word so the UI shows it immediately while AI processes.
-    /// Skips if a word with this lemma already exists (don't overwrite real definitions).
+    /// If the word already exists, bump its updatedAt so it floats to the top of the list.
     private func upsertPlaceholderWord(lemma: String) async throws {
         let normalizedLemma = lemma.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalizedLemma.isEmpty else { return }
 
-        // If word already exists (with real or placeholder definition), skip
-        if (try? await db.getWord(lemma: normalizedLemma)) != nil {
+        if var existing = try? await db.getWord(lemma: normalizedLemma) {
+            existing.updatedAt = Date()
+            try? await db.updateWord(existing)
             return
         }
 

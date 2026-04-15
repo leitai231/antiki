@@ -119,12 +119,12 @@ struct WordDetailView: View {
 
                 // Sources
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("上下文来源（\(sources.count)）")
+                    Text("场景（\(sources.count)）")
                         .font(.headline)
                         .foregroundStyle(.secondary)
 
                     if sources.isEmpty {
-                        Text("暂无上下文记录")
+                        Text("暂无场景记录")
                             .foregroundStyle(.tertiary)
                     } else {
                         ForEach(sources) { source in
@@ -219,6 +219,7 @@ struct SourceCard: View {
     @State private var isRetrying = false
     @State private var isEditingTranslation = false
     @State private var editedTranslation = ""
+    @State private var showDeleteConfirmation = false
 
     /// Whether this source has error content (failed job or error text in sentence)
     private var hasError: Bool {
@@ -346,11 +347,30 @@ struct SourceCard: View {
                 Text(source.capturedAt, style: .date)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+
+                Button {
+                    showDeleteConfirmation = true
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.borderless)
+                .help("删除此场景")
             }
         }
         .padding()
         .background(Color(.controlBackgroundColor))
         .cornerRadius(8)
+        .confirmationDialog("确认删除此场景？", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+            Button("删除", role: .destructive) {
+                guard let sourceId = source.id else { return }
+                Task {
+                    try? await Database.shared.deleteWordSource(id: sourceId)
+                    coordinator.wordChangeCounter += 1
+                }
+            }
+        }
     }
 
     private func saveTranslation() {

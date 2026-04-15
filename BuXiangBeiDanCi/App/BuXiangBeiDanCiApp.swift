@@ -22,7 +22,7 @@ struct BuXiangBeiDanCiApp: App {
 // MARK: - App Delegate
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    
+
     var wordPickerWindow: NSWindow?
     private var isProgrammaticClose = false
     
@@ -55,10 +55,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     
     private func setupWordPickerObserver() {
-        // Observe changes to isShowingPicker
         Task { @MainActor in
-            for await _ in HotkeyHandler.shared.$isShowingPicker.values {
-                if HotkeyHandler.shared.isShowingPicker {
+            // Direct callback: guaranteed synchronous close
+            HotkeyHandler.shared.onDismissPicker = { [weak self] in
+                self?.hideWordPickerWindow()
+            }
+            // Async observer: handles show and serves as backup for hide
+            for await isShowing in HotkeyHandler.shared.$isShowingPicker.values {
+                if isShowing {
                     showWordPickerWindow()
                 } else {
                     hideWordPickerWindow()
@@ -87,6 +91,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.titlebarAppearsTransparent = true
         panel.isMovableByWindowBackground = true
         panel.level = .floating
+        panel.hidesOnDeactivate = false
         panel.delegate = self
         panel.center()
         

@@ -128,6 +128,10 @@ class HotkeyHandler: ObservableObject {
         try? await Task.sleep(nanoseconds: 120_000_000)
     }
 
+    /// Callback fired synchronously when the picker should dismiss.
+    /// AppDelegate sets this to close the panel window directly.
+    var onDismissPicker: (() -> Void)?
+
     /// Handle when user confirms selected words
     func confirmCapture(words: [String], sentence: String, source: CaptureSource) async {
         logger.info("✅ Capturing \(words.count) words")
@@ -140,23 +144,22 @@ class HotkeyHandler: ObservableObject {
             )
         }
 
-        // Close the picker
-        isShowingPicker = false
-        capturedText = nil
-        currentSource = nil
-        previousApp = nil
-
-        // Show success notification
+        dismissPicker()
         showCaptureNotification(count: words.count)
     }
 
     /// Handle when user cancels
     func cancelCapture() {
         logger.info("❌ Capture cancelled")
+        dismissPicker()
+    }
+
+    private func dismissPicker() {
         isShowingPicker = false
         capturedText = nil
         currentSource = nil
         previousApp = nil
+        onDismissPicker?()
     }
 
     // MARK: - Alerts
